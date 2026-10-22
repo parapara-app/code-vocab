@@ -41,6 +41,7 @@ To get new versions without updating by hand, open `/plugin`, go to Marketplaces
 | ---------------- | -------------------------------------------------------------------- | ---------------------------- |
 | `/vocab:review`  | Explains the outside APIs in the current diff or a PR, in ko, en, ja | `/vocab:review en`           |
 | `/vocab:config`  | Shows or changes this machine's settings (private, url)              | `/vocab:config private on`   |
+| `/vocab:study`   | Fills notes for functions you have not met yet, from official docs   | `/vocab:study php array_`    |
 
 The first run asks you to log in with GitHub: open the link it prints, enter the code, and tell it you are done.
 Your token is saved in `~/.config/parapara-code/config.json`.
