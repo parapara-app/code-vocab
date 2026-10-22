@@ -1,5 +1,4 @@
 {
   "name": "vocab",
-  "version": "0.1.0",
   "description": "Explains the outside APIs a code change uses and keeps them as a shared vocabulary of notes."
 }
