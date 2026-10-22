@@ -33,6 +33,8 @@ Each explanation is saved as a note, so an API you have met before shrinks to on
    claude plugin install vocab@code-vocab
    ```
 
+To get new versions without updating by hand, open `/plugin`, go to Marketplaces, select code-vocab, and choose Enable auto-update.
+
 | Command          | What it does                                                         | Example                      |
 | ---------------- | -------------------------------------------------------------------- | ---------------------------- |
 | `/vocab:review`  | Explains the outside APIs in the current diff or a PR, in ko, en, ja | `/vocab:review en`           |
