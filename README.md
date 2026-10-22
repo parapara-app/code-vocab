@@ -33,7 +33,10 @@ Each explanation is saved as a note, so an API you have met before shrinks to on
    claude plugin install vocab@code-vocab
    ```
 
-Run it as `/vocab:review`.
+| Command          | What it does                                                         | Example                      |
+| ---------------- | -------------------------------------------------------------------- | ---------------------------- |
+| `/vocab:review`  | Explains the outside APIs in the current diff or a PR, in ko, en, ja | `/vocab:review en`           |
+| `/vocab:config`  | Shows or changes this machine's settings (private, url)              | `/vocab:config private on`   |
 
 The first run asks you to log in with GitHub: open the link it prints, enter the code, and tell it you are done.
 Your token is saved in `~/.config/parapara-code/config.json`.
