@@ -45,3 +45,6 @@ To get new versions without updating by hand, open `/plugin`, go to Marketplaces
 
 The first run asks you to log in with GitHub: open the link it prints, enter the code, and tell it you are done.
 Your token is saved in `~/.config/parapara-code/config.json`.
+
+Some languages and packages have no index yet. Their APIs are still explained and saved, but there is no progress count for them.
+When a diff uses one, the maintainer gets a message with only the language and package name (no function names, files, or commits), and adds that index later. The goal is to cover as many as possible.
