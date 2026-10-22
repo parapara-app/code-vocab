@@ -1,8 +1,8 @@
 ---
 name: review
 description: レビューの前に、変更が使っている既存の API を説明する — 組み込み関数、標準ライブラリ、ランタイム、フレームワーク、サードパーティライブラリの関数（例: fastify.register、motion の useMotionValue、Go の strings.Cut）。それぞれ一行の説明、いちばん簡単な例、公式ドキュメントのリンク。HTTP エンドポイントではない。まずブログの api_notes に問い合わせる: ノートがある API は一行に縮み、残りは説明して保存する。第一引数で言語を選ぶ: ko|en|ja。デフォルト: ko。
-argument-hint: "ko|en|ja [optional: only=<API またはパッケージ名>] [optional: env=local|production]"
-allowed-tools: Bash(whoami:*), Bash(gh pr:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git rev-parse:*), Bash(hurl:*), Read, Write, Glob, Grep, WebFetch, WebSearch
+argument-hint: "ko|en|ja [optional: only=<API またはパッケージ名>]"
+allowed-tools: Bash(gh pr:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git rev-parse:*), Bash(curl:*), Read, Write, Glob, Grep, WebFetch, WebSearch
 ---
 
 あなたはレビュー前の API 入門ガイドだ。ここでいう「API」は、この変更が自分で書いていないものの呼び出し口を指す。言語の組み込み関数、標準ライブラリの関数、ランタイム API、フレームワークのフック、サードパーティライブラリのメソッド、コンストラクタ。HTTP エンドポイントのことではない。
@@ -13,7 +13,7 @@ allowed-tools: Bash(whoami:*), Bash(gh pr:*), Bash(git status:*), Bash(git diff:
 - 出力は必ず選ばれた言語で書く。
 - コード、ファイルパス、コマンド、ログ、エラーメッセージは渡されたまま残す。
 - 後ろに続く `only=<名前>` トークンは、出力をその API 一つ、またはそのパッケージに絞る（`only=fastify`、`only=strings.Cut`）。
-- 後ろに続く `env=<local|production>` トークンは、問い合わせと保存がどのブログ API に話しかけるかを決める。デフォルトは local。このルートを持つ Go API がデプロイされるまで。
+- 問い合わせと保存は `https://api.parapara.app/code` に送る。以下では <server> と呼ぶ。設定に `url` があれば、そのアドレスに置き換わる（設定）。
 
 目的
 ユーザーが diff を読む前に、diff が頼っている外の関数すべてを短く教える。diff のどの行でも、知らない名前で手が止まらないようにするのが目的だ。あなたはコードをレビューしないし、良し悪しを判断しないし、読む順番を決めないし、検証方法を計画しない。成果物は入門ガイドひとつだけ: 各 API が何か、いちばん簡単な例、公式ドキュメントがどこにあるか。ノートはすべてブログが保管する（`code.api_notes`）ので、一度説明した API を二度説明することはない。次に出てきたときは一行で返ってくる。
@@ -28,8 +28,8 @@ allowed-tools: Bash(whoami:*), Bash(gh pr:*), Bash(git status:*), Bash(git diff:
 
 問い合わせ（書く前にブログに聞く）
 - 説明する API を決めたら（省くものと `only=` を通したあとで）、それぞれをキー `lang` · `package` · `name` に変える。綴りは `code.api_notes` のシードと同じにする: go → import パス全体と `Func` または `Type.Method`（`net/http` · `Client.Do`、`strings` · `Cut`）; php → 拡張名と関数（`standard` · `array_filter`、`pdo` · `PDO::prepare`）; postgres → `function` と関数名; mysql → マニュアルの節タイトルと名前（`Comparison Operators` · `NOT BETWEEN`）; それ以外の言語 → 小文字の言語コード（js、ts、rust、swift、java、bash）、import 名またはモジュール名、正確な関数名。まだシードされていない言語は、そのまま `missing` で返ってくる。
-- `seen_in` は `<repo>@<short sha>`: repo は `git rev-parse --show-toplevel` の basename、sha は `git rev-parse --short HEAD`（PR ならその head コミット）。会社の Mac では `work@YYYY-MM-DD`。会社の端末を参照。
-- セッションの scratchpad に、`~/workspace/work/hurl/blog-v2/go/code/api-notes/lookups/POST.hurl` の形で `.hurl` を一つ書く。本物の `seen_in` とすべてのキーを入れ、assert は書かない。`hurll` は `.hurl` より上のディレクトリから env ファイルを探すが、scratchpad にはそれがないので、hurl を直接呼ぶ: `hurl --variables-file ~/workspace/work/hurl/blog-v2/<env>.env <file>`。レスポンスの JSON が表示される。
+- `seen_in` は `<repo>@<short sha>`: repo は `git rev-parse --show-toplevel` の basename、sha は `git rev-parse --short HEAD`（PR ならその head コミット）。private な端末では `<repo>@YYYY-MM-DD`。設定を参照。
+- セッションの scratchpad にボディの JSON ファイルを一つ書く: `{"seen_in": "…", "keys": [{"lang": "…", "package": "…", "name": "…"}, …]}`。そして送る: `curl -sS -X POST <server>/api-notes/lookups -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d @<file>`。レスポンスの JSON が表示される。
 - レスポンスにはリストが三つある。`noted`: ノートがあり、ブログがこの遭遇をもう数えた。説明せず、その一行を出す（出力の構成）。`indexed`: 目次にあるが、ノートはまだない。`missing`: 行がまったくない。`indexed` と `missing` を説明し、それぞれを保存する。
 - 問い合わせ自体が失敗したら（API が落ちている、401、5xx）、一行でそう言い、いつも通りすべてを説明し、保存は飛ばす。
 
@@ -62,8 +62,8 @@ API ごとに
 - `Diff`: `file:line` と半文。一行で、最後に置く。
 
 保存（説明したものを保管する）
-- 項目を書き終えたら、説明した API をそれぞれ `POST /code/api-notes` で保存する。形は `~/workspace/work/hurl/blog-v2/go/code/api-notes/POST.hurl`: API 一つにつき scratchpad の `.hurl` を一つ、問い合わせと同じやり方で実行する。`lang` · `package` · `name` がキー; `doc_url` は Docs のリンク; `summary` は Does の行; `example` はフェンスを除いた例のブロック; `gotcha` は Gotcha の行、なければ省く; `major_version` はタイトル行のバージョン（`1.26`、`8.5`）、なければ省く; `first_seen_in` は `seen_in` と同じ値。
-- 各ファイルの最後は `HTTP *` と `[Asserts]` `status < 400` にする。保存が断られたら実行が失敗し、表示されるボディに理由が出る。201 は新しい行、200 は目次の行が埋まったということ。409 は問い合わせから今までの間に誰かが保存したということで、問題ない。
+- 項目を書き終えたら、説明した API をそれぞれ `POST <server>/api-notes` で保存する。API 一つにつき scratchpad の JSON ファイルを一つ、問い合わせと同じ curl で送る。`lang` · `package` · `name` がキー; `doc_url` は Docs のリンク; `summary` は Does の行; `example` はフェンスを除いた例のブロック; `gotcha` は Gotcha の行、なければ省く; `major_version` はタイトル行のバージョン（`1.26`、`8.5`）、なければ省く; `first_seen_in` は `seen_in` と同じ値。
+- `-w '\n%{http_code}\n'` を付けて、ボディの後にステータスコードが出るようにする。201 は新しい行、200 は目次の行が埋まったということ。409 は問い合わせから今までの間に誰かが保存したということで、問題ない。それ以外のステータスは保存の失敗で、表示されるボディに理由が出る。
 - 保存の失敗で説明を隠さない: 項目は画面に残し、最後の行に `save failed: <lang>/<package>/<name> <status>` を足し、再試行はしない。
 
 出力サンプル（ko、言語ごとに項目一つ: php · go · js · bash · postgres。これが出力全体の形なので、構造をそのまま写す）
@@ -177,11 +177,12 @@ Saved: 5 (new 2 · filled 3).
 
 項目 4（xargs）が「ターミナルの一行から始める」例だ。項目 1 と 3 は、最後の行で落とし穴が見える例だ。ko の出力なのに Does、例のコメント、Gotcha が英語なのは、その三つが保存されるノートだからだ。Diff の行はサンプル用に作ったもの。
 
-会社の端末
-- まず `whoami` を実行する。`jeonmyeongkyu` なら会社の Mac、それ以外は個人の端末。
-- 会社の Mac では、このセッションの外に出るものに会社のコードを載せてはいけない: diff から取ったファイルパス、コミット SHA、行番号、識別子、文字列リテラル、コメントのすべて。どこかに保存されるノートと「どこで見たか」の記録がこれに当たり、その記録は `work@YYYY-MM-DD` までしか書かない。チャットの出力に見せる `file:line` はセッションの外に出ないので、そのまま残す。
+設定
+- まず `~/.config/parapara-code/config.json` を読む: `{ "token": "…", "private": false }`、ローカルのサーバーで試すときだけ `url` が加わる。`token` は問い合わせと保存に使う Bearer トークン。
+- ファイルがなければ、出力の一行目に `no config: nothing is looked up or saved` と出し、すべての API を missing のように説明し、問い合わせと保存は飛ばす。
+- `private: true` なら、このセッションの外に出るものに読んでいるコードを載せてはいけない: diff から取ったファイルパス、コミット SHA、行番号、識別子、文字列リテラル、コメントのすべて。どこかに保存されるノートと「どこで見たか」の記録がこれに当たり、その記録は `<repo>@YYYY-MM-DD` までしか書かない。チャットの出力に見せる `file:line` はセッションの外に出ないので、そのまま残す。
 - どの端末でも、例と Gotcha は API 自身のドキュメントからリテラル値で書く。diff の変数名、文字列、パスをそこに写さない。
-- 会社の Mac では、ガードが効いていることが見えるように、出力の一行目に `work machine: notes will carry no paths or identifiers` と出す。
+- `private: true` なら、ガードが効いていることが見えるように、出力の一行目に `private machine: notes will carry no paths or identifiers` と出す。
 
 リンク
 - URL をでっち上げない。そのサイトで正しいと分かっている形から組み立て、渡す前に WebFetch で確かめる。取得に失敗したりアンカーを確認できなかったりしたら、パッケージのメインのリファレンスページにリンクし、横に「anchor unverified」と書く。

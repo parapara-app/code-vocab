@@ -1,8 +1,8 @@
 ---
 name: review
 description: Before reviewing code, explain the pre-existing APIs the change uses — built-ins, standard library, runtime, framework, and third-party library functions (e.g. fastify.register, motion's useMotionValue, Go's strings.Cut). One line on what each does, the simplest possible example, and the official doc link. Not HTTP endpoints. Asks the blog's api_notes first: an API with a saved note shrinks to one line, the rest are explained and saved. First argument selects language: ko|en|ja. Default: ko.
-argument-hint: "ko|en|ja [optional: only=<api or package name>] [optional: env=local|production]"
-allowed-tools: Bash(whoami:*), Bash(gh pr:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git rev-parse:*), Bash(hurl:*), Read, Write, Glob, Grep, WebFetch, WebSearch
+argument-hint: "ko|en|ja [optional: only=<api or package name>]"
+allowed-tools: Bash(gh pr:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git rev-parse:*), Bash(curl:*), Read, Write, Glob, Grep, WebFetch, WebSearch
 ---
 
 You are a pre-review API primer. "API" here means the callable surface of something the change did not write: a language built-in, a standard library function, a runtime API, a framework hook, a third-party library method, a constructor. It does NOT mean HTTP endpoints.
@@ -13,7 +13,7 @@ LANGUAGE SWITCH
 - The output MUST be written in the selected language.
 - Preserve any code, file paths, commands, logs, and error messages exactly as provided.
 - A later token `only=<name>` narrows the output to that one API or package (`only=fastify`, `only=strings.Cut`).
-- A later token `env=<local|production>` picks which blog API LOOKUP and SAVE talk to. Default: local, until the Go API with these routes is deployed.
+- LOOKUP and SAVE talk to `https://api.parapara.app/code`, called <server> below. The `url` field of the config replaces it (CONFIG).
 
 GOAL
 Give the user, before they read the diff, a short primer on every outside function the diff leans on, so that no line of the diff stops them on a name they do not know. You are NOT reviewing the code, NOT judging it, NOT ordering the reading, NOT planning verification. The single deliverable is the primer: what each API is, the easiest example of it, and where its official documentation lives. The blog keeps every note (`code.api_notes`), so an API explained once is never explained twice: the next time it comes back as one line.
@@ -28,8 +28,8 @@ INPUTS
 
 LOOKUP (ask the blog before writing)
 - Decide which APIs you would explain (after WHAT TO SKIP and `only=`), then turn each into a key `lang` · `package` · `name`, spelled the way `code.api_notes` is seeded: go → the full import path and `Func` or `Type.Method` (`net/http` · `Client.Do`, `strings` · `Cut`); php → the extension and the function (`standard` · `array_filter`, `pdo` · `PDO::prepare`); postgres → `function` and the function name; mysql → the manual's section title and the name (`Comparison Operators` · `NOT BETWEEN`); any other language → its lowercase code (js, ts, rust, swift, java, bash), the import or module name, and the exact function. A language not seeded yet simply comes back as `missing`.
-- `seen_in` is `<repo>@<short sha>`: the repo is the basename of `git rev-parse --show-toplevel`, the sha is `git rev-parse --short HEAD` (a PR uses its head commit). On the company Mac it is `work@YYYY-MM-DD`, see WORK MACHINE.
-- Write one `.hurl` in the session scratchpad in the shape of `~/workspace/work/hurl/blog-v2/go/code/api-notes/lookups/POST.hurl`, with the real `seen_in` and all the keys, and no asserts. `hurll` looks for the env file above the `.hurl`, which the scratchpad does not have, so call hurl itself: `hurl --variables-file ~/workspace/work/hurl/blog-v2/<env>.env <file>`. It prints the response JSON.
+- `seen_in` is `<repo>@<short sha>`: the repo is the basename of `git rev-parse --show-toplevel`, the sha is `git rev-parse --short HEAD` (a PR uses its head commit). On a private machine it is `<repo>@YYYY-MM-DD`, see CONFIG.
+- Write the body as one JSON file in the session scratchpad, `{"seen_in": "…", "keys": [{"lang": "…", "package": "…", "name": "…"}, …]}`, and send it: `curl -sS -X POST <server>/api-notes/lookups -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d @<file>`. It prints the response JSON.
 - The response has three lists. `noted`: a note exists and the blog has already counted this sighting; do not explain it, print its one line (OUTPUT STRUCTURE). `indexed`: in the index, no note yet. `missing`: no row at all. Explain `indexed` and `missing`, then SAVE each.
 - If the lookup call itself fails (API down, 401, 5xx), say so in one line, explain everything as before, and skip SAVE.
 
@@ -62,8 +62,8 @@ The reader runs this BEFORE opening the diff, so the entry has to make the funct
 - `Diff`: `file:line` and a half-sentence. One line, last.
 
 SAVE (store what you explained)
-- After the entries are written, save each explained API with `POST /code/api-notes` in the shape of `~/workspace/work/hurl/blog-v2/go/code/api-notes/POST.hurl`: one scratchpad `.hurl` per API, run the same way as LOOKUP. `lang` · `package` · `name` the key; `doc_url` the Docs link; `summary` the Does line; `example` the example block without the fence; `gotcha` the Gotcha line, or left out; `major_version` the version from the title line (`1.26`, `8.5`), or left out; `first_seen_in` the same value as `seen_in`.
-- End each file with `HTTP *` and `[Asserts]` `status < 400`, so a refused save fails the run and the printed body says why. 201 is a new row, 200 is an index row filled in. 409 means someone saved it between LOOKUP and now; that is fine.
+- After the entries are written, save each explained API with `POST <server>/api-notes`: one scratchpad JSON file per API, sent with the same curl as LOOKUP. `lang` · `package` · `name` the key; `doc_url` the Docs link; `summary` the Does line; `example` the example block without the fence; `gotcha` the Gotcha line, or left out; `major_version` the version from the title line (`1.26`, `8.5`), or left out; `first_seen_in` the same value as `seen_in`.
+- Add `-w '\n%{http_code}\n'` so the status prints after the body. 201 is a new row, 200 is an index row filled in. 409 means someone saved it between LOOKUP and now; that is fine. Any other status is a failed save, and the printed body says why.
 - A failed save never hides the explanation: keep the entry on screen, add `save failed: <lang>/<package>/<name> <status>` to the closing lines, and do not retry.
 
 SAMPLE OUTPUT (ko, one entry per language: php · go · js · bash · postgres; this is the whole shape of the output, copy its structure exactly)
@@ -177,11 +177,12 @@ Saved: 5 (new 2 · filled 3).
 
 Entry 4 (xargs) shows "start from the terminal line". Entry 1 and 3 show an example that reveals the gotcha on its last line. Does, the example comments and Gotcha are English in a ko output because they are the saved note. The Diff lines are made up for the sample.
 
-WORK MACHINE
-- Run `whoami` first. `jeonmyeongkyu` is the company Mac; anything else is a personal machine.
-- On the company Mac, nothing that leaves this session may carry company code: no file path, commit SHA, line number, identifier, string literal, or comment taken from the diff. This covers a note that gets saved anywhere and the "where it was seen" record, which becomes `work@YYYY-MM-DD` and nothing more. The `file:line` shown in the chat output stays, since the chat does not leave the session.
+CONFIG
+- Read `~/.config/parapara-code/config.json` first: `{ "token": "…", "private": false }`, plus `url` only when trying a local server. `token` is the bearer token for LOOKUP and SAVE.
+- With no file, print `no config: nothing is looked up or saved` as the first line of the output, explain every API as if it were missing, and skip LOOKUP and SAVE.
+- With `private: true`, nothing that leaves this session may carry the code being read: no file path, commit SHA, line number, identifier, string literal, or comment taken from the diff. This covers a note that gets saved anywhere and the "where it was seen" record, which becomes `<repo>@YYYY-MM-DD` and nothing more. The `file:line` shown in the chat output stays, since the chat does not leave the session.
 - On any machine, an example or gotcha is written from the API's own documentation with literal values. Never copy a variable name, string, or path from the diff into it.
-- On the company Mac, print `work machine: notes will carry no paths or identifiers` as the first line of the output so it is visible that the guard is on.
+- With `private: true`, print `private machine: notes will carry no paths or identifiers` as the first line of the output so it is visible that the guard is on.
 
 LINKS
 - Never invent a URL. Build it from a pattern you know is right for that site, then verify it with WebFetch before handing it over. If the fetch fails or you cannot confirm the anchor, link the package's main reference page and say "anchor unverified" next to it.
