@@ -34,3 +34,6 @@ Each explanation is saved as a note, so an API you have met before shrinks to on
    ```
 
 Run it as `/vocab:review`.
+
+The first run asks you to log in with GitHub: open the link it prints, enter the code, and tell it you are done.
+Your token is saved in `~/.config/parapara-code/config.json`.
