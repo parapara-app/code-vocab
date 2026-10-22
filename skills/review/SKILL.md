@@ -179,10 +179,18 @@ Entry 4 (xargs) shows "start from the terminal line". Entry 1 and 3 show an exam
 
 CONFIG
 - Read `~/.config/parapara-code/config.json` first: `{ "token": "…", "private": false }`, plus `url` only when trying a local server. `token` is the bearer token for LOOKUP and SAVE.
-- With no file, print `no config: nothing is looked up or saved` as the first line of the output, explain every API as if it were missing, and skip LOOKUP and SAVE.
+- With no file, run LOGIN first.
 - With `private: true`, nothing that leaves this session may carry the code being read: no file path, commit SHA, line number, identifier, string literal, or comment taken from the diff. This covers a note that gets saved anywhere and the "where it was seen" record, which becomes `<repo>@YYYY-MM-DD` and nothing more. The `file:line` shown in the chat output stays, since the chat does not leave the session.
 - On any machine, an example or gotcha is written from the API's own documentation with literal values. Never copy a variable name, string, or path from the diff into it.
 - With `private: true`, print `private machine: notes will carry no paths or identifiers` as the first line of the output so it is visible that the guard is on.
+
+LOGIN (GitHub device flow, the same one `gh auth login` uses; client_id `Ov23lihsQAi9ZqF6T8au`)
+1. `curl -sS -X POST https://github.com/login/device/code -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au` returns `device_code`, `user_code` and `verification_uri`.
+2. Print one line in the selected language: open `verification_uri`, enter `user_code`, then say when it is done. Stop there and wait for the answer; never poll.
+3. On the answer, `curl -sS -X POST https://github.com/login/oauth/access_token -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au -d device_code=<device_code> -d grant_type=urn:ietf:params:oauth:grant-type:device_code`. `authorization_pending` → print the line of step 2 again and stop. `expired_token` → start again from step 1.
+4. Write `{"github_token": "<access_token>"}` to a scratchpad file and send it with `curl -sS -X POST <server>/auth/github -H 'Content-Type: application/json' -d @<file>`. The response is `{"login": "…", "token": "…"}`. Drop the GitHub token after this call.
+5. Write `{ "token": "<token>", "private": false }` to `~/.config/parapara-code/config.json`, print `logged in as <login>`, and go on with the primer from INPUTS.
+- If any step fails, say so in one line, explain every API as if it were missing, and skip LOOKUP and SAVE.
 
 LINKS
 - Never invent a URL. Build it from a pattern you know is right for that site, then verify it with WebFetch before handing it over. If the fetch fails or you cannot confirm the anchor, link the package's main reference page and say "anchor unverified" next to it.

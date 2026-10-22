@@ -179,10 +179,18 @@ Saved: 5 (new 2 · filled 3).
 
 設定
 - まず `~/.config/parapara-code/config.json` を読む: `{ "token": "…", "private": false }`、ローカルのサーバーで試すときだけ `url` が加わる。`token` は問い合わせと保存に使う Bearer トークン。
-- ファイルがなければ、出力の一行目に `no config: nothing is looked up or saved` と出し、すべての API を missing のように説明し、問い合わせと保存は飛ばす。
+- ファイルがなければ、まずログインする。
 - `private: true` なら、このセッションの外に出るものに読んでいるコードを載せてはいけない: diff から取ったファイルパス、コミット SHA、行番号、識別子、文字列リテラル、コメントのすべて。どこかに保存されるノートと「どこで見たか」の記録がこれに当たり、その記録は `<repo>@YYYY-MM-DD` までしか書かない。チャットの出力に見せる `file:line` はセッションの外に出ないので、そのまま残す。
 - どの端末でも、例と Gotcha は API 自身のドキュメントからリテラル値で書く。diff の変数名、文字列、パスをそこに写さない。
 - `private: true` なら、ガードが効いていることが見えるように、出力の一行目に `private machine: notes will carry no paths or identifiers` と出す。
+
+ログイン（GitHub device flow、`gh auth login` と同じ方式; client_id `Ov23lihsQAi9ZqF6T8au`）
+1. `curl -sS -X POST https://github.com/login/device/code -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au` が `device_code`、`user_code`、`verification_uri` を返す。
+2. 選ばれた言語で一行出す: `verification_uri` を開いて `user_code` を入力し、終わったら教えてほしい。そこで止まって返事を待つ。自動で繰り返し問い合わせない。
+3. 返事が来たら `curl -sS -X POST https://github.com/login/oauth/access_token -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au -d device_code=<device_code> -d grant_type=urn:ietf:params:oauth:grant-type:device_code`。`authorization_pending` なら手順 2 の行をもう一度出して止まる。`expired_token` なら手順 1 からやり直す。
+4. `{"github_token": "<access_token>"}` を scratchpad のファイルに書き、`curl -sS -X POST <server>/auth/github -H 'Content-Type: application/json' -d @<file>` で送る。レスポンスは `{"login": "…", "token": "…"}`。この呼び出しが終わったら GitHub のトークンは捨てる。
+5. `{ "token": "<token>", "private": false }` を `~/.config/parapara-code/config.json` に書き、`logged in as <login>` と出し、入力の節から説明を続ける。
+- どの手順で失敗しても、一行でそう言い、すべての API を missing のように説明し、問い合わせと保存は飛ばす。
 
 リンク
 - URL をでっち上げない。そのサイトで正しいと分かっている形から組み立て、渡す前に WebFetch で確かめる。取得に失敗したりアンカーを確認できなかったりしたら、パッケージのメインのリファレンスページにリンクし、横に「anchor unverified」と書く。
