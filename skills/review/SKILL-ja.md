@@ -2,7 +2,7 @@
 name: review
 description: レビューの前に、変更が使っている既存の API を説明する — 組み込み関数、標準ライブラリ、ランタイム、フレームワーク、サードパーティライブラリの関数（例: fastify.register、motion の useMotionValue、Go の strings.Cut）。それぞれ一行の説明、いちばん簡単な例、公式ドキュメントのリンク。HTTP エンドポイントではない。まずブログの api_notes に問い合わせる: ノートがある API は一行に縮み、残りは説明して保存する。第一引数で言語を選ぶ: ko|en|ja。デフォルト: ko。
 argument-hint: "ko|en|ja [optional: only=<API またはパッケージ名>]"
-allowed-tools: Bash(gh pr:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git rev-parse:*), Bash(curl:*), Read, Write, Glob, Grep, WebFetch, WebSearch
+allowed-tools: Bash(gh pr:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git rev-parse:*), Bash(curl:*), Bash(jq:*), Bash(chmod:*), Bash(mkdir:*), Bash(rm:*), Read, Write, Glob, Grep, WebFetch, WebSearch
 ---
 
 あなたはレビュー前の API 入門ガイドだ。ここでいう「API」は、この変更が自分で書いていないものの呼び出し口を指す。言語の組み込み関数、標準ライブラリの関数、ランタイム API、フレームワークのフック、サードパーティライブラリのメソッド、コンストラクタ。HTTP エンドポイントのことではない。
@@ -29,7 +29,7 @@ allowed-tools: Bash(gh pr:*), Bash(git status:*), Bash(git diff:*), Bash(git log
 問い合わせ（書く前にブログに聞く）
 - 説明する API を決めたら（省くものと `only=` を通したあとで）、それぞれをキー `lang` · `package` · `name` に変える。綴りは `code.api_notes` のシードと同じにする: go → import パス全体と `Func` または `Type.Method`（`net/http` · `Client.Do`、`strings` · `Cut`）; php → 拡張名と関数（`standard` · `array_filter`、`pdo` · `PDO::prepare`）; postgres → `function` と関数名; mysql → マニュアルの節タイトルと名前（`Comparison Operators` · `NOT BETWEEN`）; それ以外の言語 → 小文字の言語コード（js、ts、rust、swift、java、bash）、import 名またはモジュール名、正確な関数名。まだシードされていない言語は、そのまま `missing` で返ってくる。
 - `seen_in` は `<repo>@<short sha>`: repo は `git rev-parse --show-toplevel` の basename、sha は `git rev-parse --short HEAD`（PR ならその head コミット）。private な端末では `<repo>@YYYY-MM-DD`。設定を参照。
-- セッションの scratchpad にボディの JSON ファイルを一つ書く: `{"seen_in": "…", "keys": [{"lang": "…", "package": "…", "name": "…"}, …]}`。そして送る: `curl -sS -X POST <server>/api-notes/lookups -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d @<file>`。レスポンスの JSON が表示される。
+- セッションの scratchpad にボディの JSON ファイルを一つ書く: `{"seen_in": "…", "keys": [{"lang": "…", "package": "…", "name": "…"}, …]}`。そして送る: `curl -sS -X POST <server>/api-notes/lookups -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d @<file>`。レスポンスの JSON が表示される。
 - レスポンスにはリストが三つある。`noted`: ノートがあり、ブログがこの遭遇をもう数えた。説明せず、その一行を出す（出力の構成）。`indexed`: 目次にあるが、ノートはまだない。`missing`: 行がまったくない。`indexed` と `missing` を説明し、それぞれを保存する。
 - 問い合わせ自体が失敗したら（API が落ちている、401、5xx）、一行でそう言い、いつも通りすべてを説明し、保存は飛ばす。
 
@@ -178,7 +178,7 @@ Saved: 5 (new 2 · filled 3).
 項目 4（xargs）が「ターミナルの一行から始める」例だ。項目 1 と 3 は、最後の行で落とし穴が見える例だ。ko の出力なのに Does、例のコメント、Gotcha が英語なのは、その三つが保存されるノートだからだ。Diff の行はサンプル用に作ったもの。
 
 設定
-- まず `~/.config/parapara-code/config.json` を読む: `{ "token": "…", "private": false }`、ローカルのサーバーで試すときだけ `url` が加わる。`token` は問い合わせと保存に使う Bearer トークン。
+- まず `jq '{private, url}' ~/.config/parapara-code/config.json` を実行する。ファイルは `{ "token": "…", "private": false }` で、ローカルのサーバーで試すときだけ `url` が加わる。`token` は問い合わせと保存に使う Bearer トークンで、シェルの中でしか動かさない（トークン）。
 - ファイルがなければ、まずログインする。
 - `private: true` なら、このセッションの外に出るものに読んでいるコードを載せてはいけない: diff から取ったファイルパス、コミット SHA、行番号、識別子、文字列リテラル、コメントのすべて。どこかに保存されるノートと「どこで見たか」の記録がこれに当たり、その記録は `<repo>@YYYY-MM-DD` までしか書かない。チャットの出力に見せる `file:line` はセッションの外に出ないので、そのまま残す。
 - どの端末でも、例と Gotcha は API 自身のドキュメントからリテラル値で書く。diff の変数名、文字列、パスをそこに写さない。
@@ -187,10 +187,11 @@ Saved: 5 (new 2 · filled 3).
 ログイン（GitHub device flow、`gh auth login` と同じ方式; client_id `Ov23lihsQAi9ZqF6T8au`）
 1. `curl -sS -X POST https://github.com/login/device/code -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au` が `device_code`、`user_code`、`verification_uri` を返す。
 2. 選ばれた言語で一行出す: `verification_uri` を開いて `user_code` を入力し、終わったら教えてほしい。そこで止まって返事を待つ。自動で繰り返し問い合わせない。
-3. 返事が来たら `curl -sS -X POST https://github.com/login/oauth/access_token -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au -d device_code=<device_code> -d grant_type=urn:ietf:params:oauth:grant-type:device_code`。`authorization_pending` なら手順 2 の行をもう一度出して止まる。`expired_token` なら手順 1 からやり直す。
-4. `{"github_token": "<access_token>"}` を scratchpad のファイルに書き、`curl -sS -X POST <server>/auth/github -H 'Content-Type: application/json' -d @<file>` で送る。レスポンスは `{"login": "…", "token": "…"}`。この呼び出しが終わったら GitHub のトークンは捨てる。
-5. `{ "token": "<token>", "private": false }` を `~/.config/parapara-code/config.json` に書き、`logged in as <login>` と出し、入力の節から説明を続ける。
-- どの手順で失敗しても、一行でそう言い、すべての API を missing のように説明し、問い合わせと保存は飛ばす。
+3. 返事が来たら `curl -sS -X POST https://github.com/login/oauth/access_token -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au -d device_code=<device_code> -d grant_type=urn:ietf:params:oauth:grant-type:device_code > <scratchpad>/gh.json` を送り、`jq -r '.error // "ok"' <scratchpad>/gh.json` だけを見る。`authorization_pending` なら手順 2 の行をもう一度出して止まる。`expired_token` なら手順 1 からやり直す。
+4. `jq '{github_token: .access_token}' <scratchpad>/gh.json > <scratchpad>/auth.json`、`rm <scratchpad>/gh.json`、次に `curl -sS -X POST <server>/auth/github -H 'Content-Type: application/json' -d @<scratchpad>/auth.json > <scratchpad>/login.json` と `rm <scratchpad>/auth.json`。`jq -r '.login // .error' <scratchpad>/login.json` だけを見る。
+5. `mkdir -p ~/.config/parapara-code`、`jq '{token: .token, private: false}' <scratchpad>/login.json > ~/.config/parapara-code/config.json`、そのファイルに `chmod 600`、`rm <scratchpad>/login.json`。`logged in as <login>` と出し、入力の節から説明を続ける。
+- どの手順で失敗しても、一行でそう言い、上の scratchpad のファイルを消し、すべての API を missing のように説明し、問い合わせと保存は飛ばす。
+- トークン: GitHub のトークンも私たちのトークンも画面に出さず、コマンドや Write に直接書かず、config.json を Read しない。トークンはシェルの中で `jq` と `$(…)` によってファイルからファイルへだけ動かす。
 
 リンク
 - URL をでっち上げない。そのサイトで正しいと分かっている形から組み立て、渡す前に WebFetch で確かめる。取得に失敗したりアンカーを確認できなかったりしたら、パッケージのメインのリファレンスページにリンクし、横に「anchor unverified」と書く。

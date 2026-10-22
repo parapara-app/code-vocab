@@ -2,7 +2,7 @@
 name: review
 description: Before reviewing code, explain the pre-existing APIs the change uses — built-ins, standard library, runtime, framework, and third-party library functions (e.g. fastify.register, motion's useMotionValue, Go's strings.Cut). One line on what each does, the simplest possible example, and the official doc link. Not HTTP endpoints. Asks the blog's api_notes first: an API with a saved note shrinks to one line, the rest are explained and saved. First argument selects language: ko|en|ja. Default: ko.
 argument-hint: "ko|en|ja [optional: only=<api or package name>]"
-allowed-tools: Bash(gh pr:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git rev-parse:*), Bash(curl:*), Read, Write, Glob, Grep, WebFetch, WebSearch
+allowed-tools: Bash(gh pr:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git rev-parse:*), Bash(curl:*), Bash(jq:*), Bash(chmod:*), Bash(mkdir:*), Bash(rm:*), Read, Write, Glob, Grep, WebFetch, WebSearch
 ---
 
 You are a pre-review API primer. "API" here means the callable surface of something the change did not write: a language built-in, a standard library function, a runtime API, a framework hook, a third-party library method, a constructor. It does NOT mean HTTP endpoints.
@@ -29,7 +29,7 @@ INPUTS
 LOOKUP (ask the blog before writing)
 - Decide which APIs you would explain (after WHAT TO SKIP and `only=`), then turn each into a key `lang` · `package` · `name`, spelled the way `code.api_notes` is seeded: go → the full import path and `Func` or `Type.Method` (`net/http` · `Client.Do`, `strings` · `Cut`); php → the extension and the function (`standard` · `array_filter`, `pdo` · `PDO::prepare`); postgres → `function` and the function name; mysql → the manual's section title and the name (`Comparison Operators` · `NOT BETWEEN`); any other language → its lowercase code (js, ts, rust, swift, java, bash), the import or module name, and the exact function. A language not seeded yet simply comes back as `missing`.
 - `seen_in` is `<repo>@<short sha>`: the repo is the basename of `git rev-parse --show-toplevel`, the sha is `git rev-parse --short HEAD` (a PR uses its head commit). On a private machine it is `<repo>@YYYY-MM-DD`, see CONFIG.
-- Write the body as one JSON file in the session scratchpad, `{"seen_in": "…", "keys": [{"lang": "…", "package": "…", "name": "…"}, …]}`, and send it: `curl -sS -X POST <server>/api-notes/lookups -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' -d @<file>`. It prints the response JSON.
+- Write the body as one JSON file in the session scratchpad, `{"seen_in": "…", "keys": [{"lang": "…", "package": "…", "name": "…"}, …]}`, and send it: `curl -sS -X POST <server>/api-notes/lookups -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d @<file>`. It prints the response JSON.
 - The response has three lists. `noted`: a note exists and the blog has already counted this sighting; do not explain it, print its one line (OUTPUT STRUCTURE). `indexed`: in the index, no note yet. `missing`: no row at all. Explain `indexed` and `missing`, then SAVE each.
 - If the lookup call itself fails (API down, 401, 5xx), say so in one line, explain everything as before, and skip SAVE.
 
@@ -178,7 +178,7 @@ Saved: 5 (new 2 · filled 3).
 Entry 4 (xargs) shows "start from the terminal line". Entry 1 and 3 show an example that reveals the gotcha on its last line. Does, the example comments and Gotcha are English in a ko output because they are the saved note. The Diff lines are made up for the sample.
 
 CONFIG
-- Read `~/.config/parapara-code/config.json` first: `{ "token": "…", "private": false }`, plus `url` only when trying a local server. `token` is the bearer token for LOOKUP and SAVE.
+- First run `jq '{private, url}' ~/.config/parapara-code/config.json`. The file is `{ "token": "…", "private": false }`, plus `url` only when trying a local server. `token` is the bearer token for LOOKUP and SAVE; it only ever moves inside the shell (TOKENS).
 - With no file, run LOGIN first.
 - With `private: true`, nothing that leaves this session may carry the code being read: no file path, commit SHA, line number, identifier, string literal, or comment taken from the diff. This covers a note that gets saved anywhere and the "where it was seen" record, which becomes `<repo>@YYYY-MM-DD` and nothing more. The `file:line` shown in the chat output stays, since the chat does not leave the session.
 - On any machine, an example or gotcha is written from the API's own documentation with literal values. Never copy a variable name, string, or path from the diff into it.
@@ -187,10 +187,11 @@ CONFIG
 LOGIN (GitHub device flow, the same one `gh auth login` uses; client_id `Ov23lihsQAi9ZqF6T8au`)
 1. `curl -sS -X POST https://github.com/login/device/code -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au` returns `device_code`, `user_code` and `verification_uri`.
 2. Print one line in the selected language: open `verification_uri`, enter `user_code`, then say when it is done. Stop there and wait for the answer; never poll.
-3. On the answer, `curl -sS -X POST https://github.com/login/oauth/access_token -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au -d device_code=<device_code> -d grant_type=urn:ietf:params:oauth:grant-type:device_code`. `authorization_pending` → print the line of step 2 again and stop. `expired_token` → start again from step 1.
-4. Write `{"github_token": "<access_token>"}` to a scratchpad file and send it with `curl -sS -X POST <server>/auth/github -H 'Content-Type: application/json' -d @<file>`. The response is `{"login": "…", "token": "…"}`. Drop the GitHub token after this call.
-5. Write `{ "token": "<token>", "private": false }` to `~/.config/parapara-code/config.json`, print `logged in as <login>`, and go on with the primer from INPUTS.
-- If any step fails, say so in one line, explain every API as if it were missing, and skip LOOKUP and SAVE.
+3. On the answer, send `curl -sS -X POST https://github.com/login/oauth/access_token -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au -d device_code=<device_code> -d grant_type=urn:ietf:params:oauth:grant-type:device_code > <scratchpad>/gh.json` and look only at `jq -r '.error // "ok"' <scratchpad>/gh.json`. `authorization_pending` → print the line of step 2 again and stop. `expired_token` → start again from step 1.
+4. `jq '{github_token: .access_token}' <scratchpad>/gh.json > <scratchpad>/auth.json`, `rm <scratchpad>/gh.json`, then `curl -sS -X POST <server>/auth/github -H 'Content-Type: application/json' -d @<scratchpad>/auth.json > <scratchpad>/login.json` and `rm <scratchpad>/auth.json`. Look only at `jq -r '.login // .error' <scratchpad>/login.json`.
+5. `mkdir -p ~/.config/parapara-code`, `jq '{token: .token, private: false}' <scratchpad>/login.json > ~/.config/parapara-code/config.json`, `chmod 600` that file, `rm <scratchpad>/login.json`. Print `logged in as <login>` and go on with the primer from INPUTS.
+- If any step fails, say so in one line, remove the scratchpad files above, explain every API as if it were missing, and skip LOOKUP and SAVE.
+- TOKENS: never print a GitHub token or our token, never type one into a command or a Write, never Read config.json. They move only from file to file through `jq` and `$(…)` inside the shell.
 
 LINKS
 - Never invent a URL. Build it from a pattern you know is right for that site, then verify it with WebFetch before handing it over. If the fetch fails or you cannot confirm the anchor, link the package's main reference page and say "anchor unverified" next to it.
