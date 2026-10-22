@@ -1,0 +1,13 @@
+{
+  "name": "code-vocab",
+  "owner": {
+    "name": "parapara-app"
+  },
+  "plugins": [
+    {
+      "name": "vocab",
+      "source": "./",
+      "description": "Explains the outside APIs a code change uses and keeps them as a shared vocabulary of notes."
+    }
+  ]
+}
