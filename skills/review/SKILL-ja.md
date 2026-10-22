@@ -169,7 +169,7 @@ SELECT string_agg(name, ', ') FROM (VALUES ('a'), (NULL)) AS t(name);
    - Gotcha: Without `ORDER BY` the order can change from one run to the next
    - Diff: stores/api_notes.go:31, 패키지별 이름 목록을 한 칸으로
 
-Noted: strings.Cut — 3번째 (처음 work@29fba9d) → https://mogumogu.dev/api-notes#go-strings-Cut
+Noted: strings.Cut — 3번째 (처음 work@29fba9d) · Splits a string around the first separator → https://pkg.go.dev/strings#Cut
 Skipped: `echo`, `fmt.Println`, `console.log`. Project-defined: `insertStatement`.
 Saved: 5 (new 2 · filled 3).
 
@@ -200,7 +200,7 @@ Saved: 5 (new 2 · filled 3).
 出力の構成（文は選んだ言語、ラベルは英語、markdown の見出しなし）
 1. 一行: どの変更を読んだか（PR 番号か「working tree」）、説明した API の数（indexed · missing）、noted で返ってきた数、自明なので省いた数。
 2. API の番号付きリスト。出力サンプルの通り、API 一つにつき一項目。順番: 言語の組み込み / 標準ライブラリ → ランタイム → フレームワーク → サードパーティライブラリ。グループの中では diff で API が最初に出てくる行の順。番号はリスト全体で 1、2、3… と続ける。
-3. noted の API ごとに `Noted:` を一行、項目はなし: `<package>.<name> — <seen_count>번째 (처음 <first_seen_in>) → https://mogumogu.dev/api-notes#<lang>-<package>-<name>`。値は問い合わせのレスポンスから取る。
+3. noted の API ごとに `Noted:` を一行、項目はなし: `<package>.<name> — <seen_count>번째 (처음 <first_seen_in>) · <summary> → <doc_url>`。値は問い合わせのレスポンスから取る。
 4. 最後の一行に省いた自明なものを並べ、そのあと `Saved: <n> (new <a> · filled <b>)` と、あれば `save failed:` の行。
 5. 説明した API が五つ以上なら小さな表: 番号 / API / パッケージ / diff のどこか / リンク。読み手が忘れたものに戻ってこられる。
 

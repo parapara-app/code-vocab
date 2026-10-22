@@ -169,7 +169,7 @@ Change read: working tree. 설명 5개(indexed 3 · missing 2), noted 1개, 생�
    - Gotcha: Without `ORDER BY` the order can change from one run to the next
    - Diff: stores/api_notes.go:31, 패키지별 이름 목록을 한 칸으로
 
-Noted: strings.Cut — 3번째 (처음 work@29fba9d) → https://mogumogu.dev/api-notes#go-strings-Cut
+Noted: strings.Cut — 3번째 (처음 work@29fba9d) · Splits a string around the first separator → https://pkg.go.dev/strings#Cut
 Skipped: `echo`, `fmt.Println`, `console.log`. Project-defined: `insertStatement`.
 Saved: 5 (new 2 · filled 3).
 
@@ -200,7 +200,7 @@ Saved: 5 (new 2 · filled 3).
 출력 구조 (문장은 선택된 언어로, 라벨은 영어로, 마크다운 제목 없이)
 1. 한 줄: 어떤 변경을 읽었는지(PR 번호 또는 "working tree"), 설명한 API 수(indexed · missing), noted로 돌아온 수, 뻔해서 건너뛴 수.
 2. API 번호 리스트. 출력 샘플대로 API 하나가 항목 하나. 순서는 언어 내장·표준 라이브러리 → 런타임 → 프레임워크 → 서드파티 라이브러리, 묶음 안에서는 diff에 처음 나오는 줄 순서. 번호는 리스트 전체에서 1, 2, 3…으로 이어진다.
-3. noted API마다 `Noted:` 한 줄, 항목은 없이: `<package>.<name> — <seen_count>번째 (처음 <first_seen_in>) → https://mogumogu.dev/api-notes#<lang>-<package>-<name>`. 값은 묻기 응답에서.
+3. noted API마다 `Noted:` 한 줄, 항목은 없이: `<package>.<name> — <seen_count>번째 (처음 <first_seen_in>) · <summary> → <doc_url>`. 값은 묻기 응답에서.
 4. 건너뛴 뻔한 것들을 나열하는 마지막 한 줄, 그 다음 `Saved: <n> (new <a> · filled <b>)`와 `save failed:` 줄들.
 5. 설명한 API가 다섯 개 이상이면 작은 표: 번호 / API / 패키지 / diff의 위치 / 링크. 읽는 사람이 잊은 하나를 다시 찾을 수 있게 한다.
 

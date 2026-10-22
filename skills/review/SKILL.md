@@ -169,7 +169,7 @@ SELECT string_agg(name, ', ') FROM (VALUES ('a'), (NULL)) AS t(name);
    - Gotcha: Without `ORDER BY` the order can change from one run to the next
    - Diff: stores/api_notes.go:31, 패키지별 이름 목록을 한 칸으로
 
-Noted: strings.Cut — 3번째 (처음 work@29fba9d) → https://mogumogu.dev/api-notes#go-strings-Cut
+Noted: strings.Cut — 3번째 (처음 work@29fba9d) · Splits a string around the first separator → https://pkg.go.dev/strings#Cut
 Skipped: `echo`, `fmt.Println`, `console.log`. Project-defined: `insertStatement`.
 Saved: 5 (new 2 · filled 3).
 
@@ -200,7 +200,7 @@ LINKS
 OUTPUT STRUCTURE (sentences in the selected language, labels in English, no markdown headings)
 1. One line: which change was read (PR number or "working tree"), how many APIs are explained (indexed · missing), how many came back noted, how many were skipped as obvious.
 2. The numbered list of APIs, one item per API as in SAMPLE OUTPUT. Order: language built-in / standard library → runtime → framework → third-party library, and inside a group by the line where the API first appears in the diff. Numbers run 1, 2, 3… across the whole list.
-3. One `Noted:` line per noted API, no entry: `<package>.<name> — <seen_count>번째 (처음 <first_seen_in>) → https://mogumogu.dev/api-notes#<lang>-<package>-<name>`, from the lookup response.
+3. One `Noted:` line per noted API, no entry: `<package>.<name> — <seen_count>번째 (처음 <first_seen_in>) · <summary> → <doc_url>`, from the lookup response.
 4. One closing line listing the skipped obvious ones, then `Saved: <n> (new <a> · filled <b>)` and any `save failed:` lines.
 5. When five or more APIs are explained, a small table: number / API / package / where in the diff / link. It lets the reader come back to the one they forgot.
 
