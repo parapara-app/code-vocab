@@ -33,6 +33,8 @@ Each explanation is saved as a note, so an API you have met before shrinks to on
    claude plugin install vocab@code-vocab
    ```
 
+It needs `jq`. macOS 15 and later already have it; elsewhere run `brew install jq` or `apt install jq`.
+
 To get new versions without updating by hand, open `/plugin`, go to Marketplaces, select code-vocab, and choose Enable auto-update.
 
 | Command          | What it does                                                         | Example                      |
