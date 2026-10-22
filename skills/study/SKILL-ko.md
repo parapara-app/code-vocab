@@ -1,6 +1,6 @@
 ---
 name: study
-description: diff 없이 공부한다 — 목차에서 아직 노트가 없는 함수(예: php array_)를 골라, 하나씩 공식 문서로 채운다. 여기서 만든 노트는 아직 못 만난 것으로 쳐서 seen_count가 0으로 남는다. 첫 인자로 출력 언어 선택: ko|en|ja. 기본값: ko.
+description: diff 없이 공부한다 — 목차에서 아직 노트가 없는 함수(예: php array_)를 골라, 하나씩 공식 문서로 채운다. 하나하나 내가 공부한 것으로 남고, diff에서 만난 횟수와는 따로 센다. 첫 인자로 출력 언어 선택: ko|en|ja. 기본값: ko.
 argument-hint: "[ko|en|ja] <lang> <접두어 | 이름 …>"
 allowed-tools: Bash(curl:*), Bash(jq:*), Write, WebFetch
 ---
@@ -20,7 +20,7 @@ allowed-tools: Bash(curl:*), Bash(jq:*), Write, WebFetch
    - `example`: 혼자 돌아가는 2–5줄, 리터럴 값, 값이 나오는 줄마다 끝에 주석으로 결과
    - `gotcha`: 처음 쓰는 사람이 하는 실수 한 줄, 없으면 뺀다
    번호 항목으로 `Does`, 0열의 펜스 블록 예제, `Gotcha`, `Docs`를 보여 준 뒤 저장한다: `{lang, package, name, doc_url, summary, example, gotcha}`를 scratchpad JSON 파일에 쓰고 `curl -sS -X POST <server>/api-notes -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d @<파일> -w '\n%{http_code}\n'`를 보낸다. `first_seen_in`은 빼서 본 횟수가 생기지 않게 한다.
-5. 200은 목차 행을 채운 것, 409는 누가 먼저 채운 것이다. 그 밖은 `save failed: <name> <status>`.
+5. 200은 목차 행을 채운 것, 409는 누가 먼저 채운 것이다. 그 밖은 `save failed: <name> <status>`. 200이나 409 뒤에는 공부한 것으로 남긴다: `curl -sS -X POST <server>/api-notes/studied -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d '{"lang": "…", "package": "…", "name": "…"}' -o /dev/null -w '%{http_code}\n'`. 204면 끝, 그 밖은 `studied failed: <name> <status>`.
 6. 마지막 줄, 손댄 패키지마다: `<package> <summary 있는 행> / <전체 행>`. GET을 한 번 더 해서 센다.
 
 규칙
