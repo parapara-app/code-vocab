@@ -2,7 +2,7 @@
 name: study
 description: diff 없이 공부한다 — 목차에서 아직 노트가 없는 함수(예: php array_)를 골라, 하나씩 공식 문서로 채운다. 하나하나 내가 공부한 것으로 남고, diff에서 만난 횟수와는 따로 센다. 첫 인자로 출력 언어 선택: ko|en|ja. 기본값: ko.
 argument-hint: "[ko|en|ja] <lang> <접두어 | 이름 …>"
-allowed-tools: Bash(curl:*), Bash(jq:*), Write, WebFetch
+allowed-tools: Bash(curl:*), Bash(jq:*), Read, Write, WebFetch
 ---
 
 당신은 사용자가 아직 diff에서 만나지 않은 함수의 노트를 공식 문서만 보고 채운다. 서버는 `https://api.parapara.app/code`이고, 아래에서는 <server>라고 부른다. 설정에 `url`이 있으면 그 주소로 바뀐다.
@@ -19,12 +19,12 @@ allowed-tools: Bash(curl:*), Bash(jq:*), Write, WebFetch
    - `summary`: 쉬운 단어로 쓴 평이한 영어 한 문장, 효과를 먼저
    - `example`: 혼자 돌아가는 2–5줄, 리터럴 값, 값이 나오는 줄마다 끝에 주석으로 결과
    - `gotcha`: 처음 쓰는 사람이 하는 실수 한 줄, 없으면 뺀다
-   번호 항목으로 `Does`, 0열의 펜스 블록 예제, `Gotcha`, `Docs`를 보여 준 뒤 저장한다: `{lang, package, name, doc_url, summary, example, gotcha}`를 scratchpad JSON 파일에 쓰고 `curl -sS -X POST <server>/api-notes -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d @<파일> -w '\n%{http_code}\n'`를 보낸다. `first_seen_in`은 빼서 본 횟수가 생기지 않게 한다.
+   플러그인 루트의 `entry.tmpl`(이 스킬 폴더 기준 `../../entry.tmpl`, 첫 항목 전에 한 번 Read)을 채워서 보여 준다. review 전용 줄 `Signature` · `Params` · `Returns` · `Diff`는 뺀다. `{version}`은 문서 페이지에 보이는 버전이고, 없으면 뺀다. 그 뒤 저장한다: `{lang, package, name, doc_url, summary, example, gotcha}`를 scratchpad JSON 파일에 쓰고 `curl -sS -X POST <server>/api-notes -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d @<파일> -w '\n%{http_code}\n'`를 보낸다. `first_seen_in`은 빼서 본 횟수가 생기지 않게 한다.
 5. 200은 목차 행을 채운 것, 409는 누가 먼저 채운 것이다. 그 밖은 `save failed: <name> <status>`. 200이나 409 뒤에는 공부한 것으로 남긴다: `curl -sS -X POST <server>/api-notes/studied -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d '{"lang": "…", "package": "…", "name": "…"}' -o /dev/null -w '%{http_code}\n'`. 204면 끝, 그 밖은 `studied failed: <name> <status>`.
 6. 마지막 줄, 손댄 패키지마다: `<package> <summary 있는 행> / <전체 행>`. GET을 한 번 더 해서 센다.
 
 규칙
 - 공식 페이지만 보고 쓴다. 어느 컴에서든 사용자의 코드에서 나온 건 노트에 들어가지 않는다.
-- 라벨(`Does` · `Docs` · `Gotcha`)은 영어 그대로. `Does`, 예제, `Gotcha`는 저장되는 노트라 출력 언어와 상관없이 영어다. 나머지 문장은 언어 토큰을 따른다.
+- 라벨과 어느 빈칸이 영어로 남는지는 `entry.tmpl`이 말하는 대로. 나머지 문장은 언어 토큰을 따른다.
 
 ARGUMENTS: $ARGUMENTS

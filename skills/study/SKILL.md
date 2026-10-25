@@ -2,7 +2,7 @@
 name: study
 description: Study without a diff — pick functions from the index that have no note yet (e.g. php array_) and fill each one from its official docs. Each one is recorded as studied for you, apart from how many diffs you met it in. First argument may select the language: ko|en|ja. Default: ko.
 argument-hint: "[ko|en|ja] <lang> <prefix | name …>"
-allowed-tools: Bash(curl:*), Bash(jq:*), Write, WebFetch
+allowed-tools: Bash(curl:*), Bash(jq:*), Read, Write, WebFetch
 ---
 
 You fill notes for functions the user has not met in a diff yet, straight from the official docs. The server is `https://api.parapara.app/code`, called <server> below; a `url` in the config replaces it.
@@ -19,12 +19,12 @@ STEPS
    - `summary`: one plain-English sentence with easy words, effect first
    - `example`: 2–5 lines that run on their own, literal values, the output as a trailing comment on each line that makes one
    - `gotcha`: the mistake a first-time user makes, one short line, or left out
-   Show it as a numbered entry with `Does`, the example in a fenced block at column 0, `Gotcha` and `Docs`, then save it: write `{lang, package, name, doc_url, summary, example, gotcha}` to a scratchpad JSON file and send `curl -sS -X POST <server>/api-notes -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d @<file> -w '\n%{http_code}\n'`. Leave `first_seen_in` out, so no seen count is made.
+   Print it by filling `entry.tmpl` at the plugin root (`../../entry.tmpl` from this skill's base directory; Read it once before the first entry), leaving out the review-only lines `Signature` · `Params` · `Returns` · `Diff`. `{version}` is the version the doc page shows, left out when it shows none. Then save it: write `{lang, package, name, doc_url, summary, example, gotcha}` to a scratchpad JSON file and send `curl -sS -X POST <server>/api-notes -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d @<file> -w '\n%{http_code}\n'`. Leave `first_seen_in` out, so no seen count is made.
 5. 200 means the index row was filled, 409 means someone filled it first; anything else is `save failed: <name> <status>`. After a 200 or a 409, record it as studied: `curl -sS -X POST <server>/api-notes/studied -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d '{"lang": "…", "package": "…", "name": "…"}' -o /dev/null -w '%{http_code}\n'`. 204 is done; anything else is `studied failed: <name> <status>`.
 6. Last line, per package touched: `<package> <rows with a summary> / <all rows>`, from one more GET.
 
 RULES
 - Write only from the official page. Nothing from the user's code goes into a note, on any machine.
-- Labels (`Does` · `Docs` · `Gotcha`) stay English; `Does`, the example and `Gotcha` are English in every output language because they are the saved note. Other sentences follow the language token.
+- Labels, and which slots stay English, are as `entry.tmpl` says; every other sentence follows the language token.
 
 ARGUMENTS: $ARGUMENTS
