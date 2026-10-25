@@ -19,19 +19,19 @@ GOAL
 Give the user, before they read the diff, a short primer on every outside function the diff leans on, so that no line of the diff stops them on a name they do not know. You are NOT reviewing the code, NOT judging it, NOT ordering the reading, NOT planning verification. The single deliverable is the primer: what each API is, the easiest example of it, and where its official documentation lives. The blog keeps every note (`code.api_notes`), so an API explained once is never explained twice: the next time it comes back as one line.
 
 INPUTS
-- Given a PR number, URL, or branch, read it with `gh pr diff <n>` and `gh pr view <n> --json title,body,headRefName`.
-- With no PR, run `git status`, `git diff`, `git diff --staged`, and `git log`. Cover BOTH unstaged and staged changes; when working solo the change is often already staged.
-- If the user pasted code or a diff, use that as the source of truth instead.
-- Read the import / require / use lines of every changed file. They decide which package a method belongs to.
-- Read the dependency manifest the repo actually has (`package.json`, `go.mod`, `composer.json`, `Cargo.toml`, `Package.swift`, `pom.xml`) and note the installed version of each package you explain. Docs differ between majors; link the installed one.
-- If there are no changes at all, say so and stop.
+- With a PR: given a PR number, URL, or branch, read it with `gh pr diff <n>` and `gh pr view <n> --json title,body,headRefName`.
+- With no PR: run `git status`, `git diff`, `git diff --staged`, and `git log`. Cover BOTH unstaged and staged changes; when working solo the change is often already staged.
+- Pasted code: if the user pasted code or a diff, use that as the source of truth instead.
+- Read the imports: read the import / require / use lines of every changed file. They decide which package a method belongs to.
+- Check installed versions: read the dependency manifest the repo actually has (`package.json`, `go.mod`, `composer.json`, `Cargo.toml`, `Package.swift`, `pom.xml`) and note the installed version of each package you explain. Docs differ between majors; link the installed one.
+- No changes: if there are no changes at all, say so and stop.
 
 LOOKUP (ask the blog before writing)
-- Decide which APIs you would explain (after WHAT TO SKIP and `only=`), then turn each into a key `lang` · `package` · `name`, spelled the way `code.api_notes` is seeded: go → the full import path and `Func` or `Type.Method` (`net/http` · `Client.Do`, `strings` · `Cut`); php → the extension and the function (`standard` · `array_filter`, `pdo` · `PDO::prepare`); postgres → `function` and the function name; mysql → the manual's section title and the name (`Comparison Operators` · `NOT BETWEEN`); any other language → its lowercase code (js, ts, rust, swift, java, bash), the import or module name, and the exact function. A language not seeded yet simply comes back as `missing`.
-- `seen_in` is `<repo>@<short sha>`: the repo is the basename of `git rev-parse --show-toplevel`, the sha is `git rev-parse --short HEAD` (a PR uses its head commit). On a private machine it is `<repo>@YYYY-MM-DD`, see CONFIG.
-- Write the body as one JSON file in the session scratchpad, `{"seen_in": "…", "keys": [{"lang": "…", "package": "…", "name": "…"}, …]}`, and send it: `curl -sS -X POST <server>/api-notes/lookups -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d @<file>`. It prints the response JSON.
-- The response has three lists. `noted`: a note exists and the blog has already counted this sighting; do not explain it, print its one line (OUTPUT STRUCTURE). `indexed`: in the index, no note yet. `missing`: no row at all. Explain `indexed` and `missing`, then SAVE each.
-- If the lookup call itself fails (API down, 401, 5xx), say so in one line, explain everything as before, and skip SAVE.
+- Build the keys: decide which APIs you would explain (after WHAT TO SKIP and `only=`), then turn each into a key `lang` · `package` · `name`, spelled the way `code.api_notes` is seeded: go → the full import path and `Func` or `Type.Method` (`net/http` · `Client.Do`, `strings` · `Cut`); php → the extension and the function (`standard` · `array_filter`, `pdo` · `PDO::prepare`); postgres → `function` and the function name; mysql → the manual's section title and the name (`Comparison Operators` · `NOT BETWEEN`); any other language → its lowercase code (js, ts, rust, swift, java, bash), the import or module name, and the exact function. A language not seeded yet simply comes back as `missing`.
+- Set seen_in: `seen_in` is `<repo>@<short sha>`: the repo is the basename of `git rev-parse --show-toplevel`, the sha is `git rev-parse --short HEAD` (a PR uses its head commit). On a private machine it is `<repo>@YYYY-MM-DD`, see CONFIG.
+- Send the lookup: write the body as one JSON file in the session scratchpad, `{"seen_in": "…", "keys": [{"lang": "…", "package": "…", "name": "…"}, …]}`, and send it: `curl -sS -X POST <server>/api-notes/lookups -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d @<file>`. It prints the response JSON.
+- Read the response: it has three lists. `noted`: a note exists and the blog has already counted this sighting; do not explain it, print its one line (OUTPUT STRUCTURE). `indexed`: in the index, no note yet. `missing`: no row at all. Explain `indexed` and `missing`, then SAVE each.
+- Lookup failure: if the lookup call itself fails (API down, 401, 5xx), say so in one line, explain everything as before, and skip SAVE.
 
 WHAT TO EXPLAIN
 - Language built-ins (`Array.prototype.flatMap`, `strings.Cut`, `array_column`), standard library, runtime APIs (`process.env`, `AbortController`), framework APIs (`fastify.register`, `useMotionValue`), third-party library APIs, constructors (`new URLSearchParams()`).
@@ -59,9 +59,9 @@ The reader runs this BEFORE opening the diff, so the entry has to make the funct
 - `Diff`: `file:line` and a half-sentence. One line, last.
 
 SAVE (store what you explained)
-- After the entries are written, save each explained API with `POST <server>/api-notes`: one scratchpad JSON file per API, sent with the same curl as LOOKUP. `lang` · `package` · `name` the key; `doc_url` the Docs link; `summary` the Does line; `example` the example block without the fence; `gotcha` the Gotcha line, or left out; `major_version` the version from the title line (`1.26`, `8.5`), or left out; `first_seen_in` the same value as `seen_in`.
-- Add `-w '\n%{http_code}\n'` so the status prints after the body. 201 is a new row, 200 is an index row filled in. 409 means someone saved it between LOOKUP and now; that is fine. Any other status is a failed save, and the printed body says why.
-- A failed save never hides the explanation: keep the entry on screen, add `save failed: <lang>/<package>/<name> <status>` to the closing lines, and do not retry.
+- Send the save: after the entries are written, save each explained API with `POST <server>/api-notes`: one scratchpad JSON file per API, sent with the same curl as LOOKUP. `lang` · `package` · `name` the key; `doc_url` the Docs link; `summary` the Does line; `example` the example block without the fence; `gotcha` the Gotcha line, or left out; `major_version` the version from the title line (`1.26`, `8.5`), or left out; `first_seen_in` the same value as `seen_in`.
+- Read the status: add `-w '\n%{http_code}\n'` so the status prints after the body. 201 is a new row, 200 is an index row filled in. 409 means someone saved it between LOOKUP and now; that is fine. Any other status is a failed save, and the printed body says why.
+- Save failure: a failed save never hides the explanation. keep the entry on screen, add `save failed: <lang>/<package>/<name> <status>` to the closing lines, and do not retry.
 
 SAMPLE OUTPUT (ko, one entry per language: php · go · js · bash · postgres; this is the whole shape of the output, copy its structure exactly)
 
@@ -182,12 +182,12 @@ CONFIG
 - With `private: true`, print `private machine: notes will carry no paths or identifiers` as the first line of the output so it is visible that the guard is on.
 
 LOGIN (GitHub device flow, the same one `gh auth login` uses; client_id `Ov23lihsQAi9ZqF6T8au`)
-1. `curl -sS -X POST https://github.com/login/device/code -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au` returns `device_code`, `user_code` and `verification_uri`.
-2. Print one line in the selected language: open `verification_uri`, enter `user_code`, then say when it is done. Stop there and wait for the answer; never poll.
-3. On the answer, send `curl -sS -X POST https://github.com/login/oauth/access_token -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au -d device_code=<device_code> -d grant_type=urn:ietf:params:oauth:grant-type:device_code > <scratchpad>/gh.json` and look only at `jq -r '.error // "ok"' <scratchpad>/gh.json`. `authorization_pending` → print the line of step 2 again and stop. `expired_token` → start again from step 1.
-4. `jq '{github_token: .access_token}' <scratchpad>/gh.json > <scratchpad>/auth.json`, `rm <scratchpad>/gh.json`, then `curl -sS -X POST <server>/auth/github -H 'Content-Type: application/json' -d @<scratchpad>/auth.json > <scratchpad>/login.json` and `rm <scratchpad>/auth.json`. Look only at `jq -r '.login // .error' <scratchpad>/login.json`.
-5. `mkdir -p ~/.config/parapara-code`, `jq '{token: .token, private: false}' <scratchpad>/login.json > ~/.config/parapara-code/config.json`, `chmod 600` that file, `rm <scratchpad>/login.json`. Print `logged in as <login>` and go on with the primer from INPUTS.
-- If any step fails, say so in one line, remove the scratchpad files above, explain every API as if it were missing, and skip LOOKUP and SAVE.
+1. Get the code: `curl -sS -X POST https://github.com/login/device/code -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au` returns `device_code`, `user_code` and `verification_uri`.
+2. Tell the user: print one line in the selected language. open `verification_uri`, enter `user_code`, then say when it is done. Stop there and wait for the answer; never poll.
+3. Fetch the token: on the answer, send `curl -sS -X POST https://github.com/login/oauth/access_token -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au -d device_code=<device_code> -d grant_type=urn:ietf:params:oauth:grant-type:device_code > <scratchpad>/gh.json` and look only at `jq -r '.error // "ok"' <scratchpad>/gh.json`. `authorization_pending` → print the line of step 2 again and stop. `expired_token` → start again from step 1.
+4. Log in to the server: `jq '{github_token: .access_token}' <scratchpad>/gh.json > <scratchpad>/auth.json`, `rm <scratchpad>/gh.json`, then `curl -sS -X POST <server>/auth/github -H 'Content-Type: application/json' -d @<scratchpad>/auth.json > <scratchpad>/login.json` and `rm <scratchpad>/auth.json`. Look only at `jq -r '.login // .error' <scratchpad>/login.json`.
+5. Write the config: `mkdir -p ~/.config/parapara-code`, `jq '{token: .token, private: false}' <scratchpad>/login.json > ~/.config/parapara-code/config.json`, `chmod 600` that file, `rm <scratchpad>/login.json`. Print `logged in as <login>` and go on with the primer from INPUTS.
+- Login failure: if any step fails, say so in one line, remove the scratchpad files above, explain every API as if it were missing, and skip LOOKUP and SAVE.
 - TOKENS: never print a GitHub token or our token, never type one into a command or a Write, never Read config.json. They move only from file to file through `jq` and `$(…)` inside the shell.
 
 LINKS
@@ -195,11 +195,11 @@ LINKS
 - One link per API. Do not pad with related reading.
 
 OUTPUT STRUCTURE (sentences in the selected language, labels in English, no markdown headings)
-1. One line: which change was read (PR number or "working tree"), how many APIs are explained (indexed · missing), how many came back noted, how many were skipped as obvious.
-2. The numbered list of APIs, one item per API as in SAMPLE OUTPUT. Order: language built-in / standard library → runtime → framework → third-party library, and inside a group by the line where the API first appears in the diff. Numbers run 1, 2, 3… across the whole list.
-3. One `Noted:` line per noted API, no entry: `<package>.<name> — <seen_count>번째 (처음 <first_seen_in>) · <summary> → <doc_url>`, from the lookup response.
-4. One closing line listing the skipped obvious ones, then `Saved: <n> (new <a> · filled <b>)` and any `save failed:` lines.
-5. When five or more APIs are explained, a small table: number / API / package / where in the diff / link. It lets the reader come back to the one they forgot.
+1. First line: which change was read (PR number or "working tree"), how many APIs are explained (indexed · missing), how many came back noted, how many were skipped as obvious.
+2. The entries: the numbered list of APIs, one item per API as in SAMPLE OUTPUT. Order: language built-in / standard library → runtime → framework → third-party library, and inside a group by the line where the API first appears in the diff. Numbers run 1, 2, 3… across the whole list.
+3. Noted lines: one `Noted:` line per noted API, no entry: `<package>.<name> — <seen_count>번째 (처음 <first_seen_in>) · <summary> → <doc_url>`, from the lookup response.
+4. Closing line: the skipped obvious ones, then `Saved: <n> (new <a> · filled <b>)` and any `save failed:` lines.
+5. Table: when five or more APIs are explained, a small table. number / API / package / where in the diff / link. It lets the reader come back to the one they forgot.
 
 RULES
 - Do not approve or reject the change. Do not write review comments.

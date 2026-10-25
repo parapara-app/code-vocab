@@ -19,19 +19,19 @@ allowed-tools: Bash(gh pr:*), Bash(git status:*), Bash(git diff:*), Bash(git log
 사용자가 diff를 읽기 전에, diff가 기대는 바깥 함수 전부를 짧게 알려준다. diff의 어느 줄에서도 모르는 이름 때문에 멈추지 않게 하는 것이 목적이다. 당신은 코드를 리뷰하지 않고, 판단하지 않고, 읽는 순서를 정하지 않고, 검증 방법을 계획하지 않는다. 유일한 산출물은 입문 안내다: 각 API가 무엇인지, 가장 쉬운 예제, 공식 문서가 어디 있는지. 노트는 전부 블로그가 보관하므로(`code.api_notes`) 한 번 설명한 API는 두 번 설명하지 않는다. 다음에 만나면 한 줄로 돌아온다.
 
 입력
-- PR 번호·URL·브랜치를 받으면 `gh pr diff <n>`과 `gh pr view <n> --json title,body,headRefName`으로 읽는다.
-- PR이 없으면 `git status`, `git diff`, `git diff --staged`, `git log`를 실행한다. unstaged와 staged 둘 다 본다. 혼자 작업할 때는 변경이 이미 staged인 경우가 많다.
-- 사용자가 코드나 diff를 붙여넣었으면 그것을 source of truth로 삼는다.
-- 변경된 모든 파일의 import / require / use 줄을 읽는다. 어떤 메서드가 어느 패키지 것인지는 이 줄이 결정한다.
-- 레포에 실제로 있는 의존성 파일(`package.json`, `go.mod`, `composer.json`, `Cargo.toml`, `Package.swift`, `pom.xml`)을 읽고, 설명할 패키지마다 설치된 버전을 적어둔다. 문서는 메이저 버전마다 다르다. 설치된 버전의 문서를 링크한다.
-- 변경이 전혀 없으면 그렇게 말하고 멈춘다.
+- PR을 받았을 때: PR 번호·URL·브랜치를 받으면 `gh pr diff <n>`과 `gh pr view <n> --json title,body,headRefName`으로 읽는다.
+- PR이 없을 때: `git status`, `git diff`, `git diff --staged`, `git log`를 실행한다. unstaged와 staged 둘 다 본다. 혼자 작업할 때는 변경이 이미 staged인 경우가 많다.
+- 붙여넣은 코드: 사용자가 코드나 diff를 붙여넣었으면 그것을 source of truth로 삼는다.
+- import 줄 읽기: 변경된 모든 파일의 import / require / use 줄을 읽는다. 어떤 메서드가 어느 패키지 것인지는 이 줄이 결정한다.
+- 설치 버전 확인: 레포에 실제로 있는 의존성 파일(`package.json`, `go.mod`, `composer.json`, `Cargo.toml`, `Package.swift`, `pom.xml`)을 읽고, 설명할 패키지마다 설치된 버전을 적어둔다. 문서는 메이저 버전마다 다르다. 설치된 버전의 문서를 링크한다.
+- 변경 없음: 변경이 전혀 없으면 그렇게 말하고 멈춘다.
 
 묻기 (쓰기 전에 블로그에 묻는다)
-- 설명할 API를 정한 뒤(건너뛸 것과 `only=`를 거친 뒤), 각각을 키 `lang` · `package` · `name`으로 바꾼다. 철자는 `code.api_notes` 시드와 같게: go → 전체 import 경로와 `Func` 또는 `Type.Method` (`net/http` · `Client.Do`, `strings` · `Cut`); php → 확장 이름과 함수 (`standard` · `array_filter`, `pdo` · `PDO::prepare`); postgres → `function`과 함수 이름; mysql → 매뉴얼의 절 제목과 이름 (`Comparison Operators` · `NOT BETWEEN`); 그 밖의 언어 → 소문자 코드(js, ts, rust, swift, java, bash), import나 모듈 이름, 정확한 함수 이름. 아직 시딩 안 된 언어는 그냥 `missing`으로 돌아온다.
-- `seen_in`은 `<레포>@<짧은 sha>`: 레포는 `git rev-parse --show-toplevel`의 마지막 폴더 이름, sha는 `git rev-parse --short HEAD`(PR이면 그 head 커밋). private 컴에서는 `<레포>@YYYY-MM-DD`. 설정 절 참고.
-- 세션 scratchpad에 본문 JSON 파일 하나를 쓴다: `{"seen_in": "…", "keys": [{"lang": "…", "package": "…", "name": "…"}, …]}`. 그리고 보낸다: `curl -sS -X POST <server>/api-notes/lookups -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d @<파일>`. 응답 JSON이 찍힌다.
-- 응답은 목록 셋이다. `noted`: 노트가 있고, 이번에 본 것은 블로그가 이미 세었다. 설명하지 말고 한 줄만 찍는다(출력 구조). `indexed`: 목차에는 있고 노트는 아직 없다. `missing`: 행이 아예 없다. `indexed`와 `missing`은 설명하고, 각각 저장한다(저장).
-- 묻기 호출 자체가 실패하면(API 꺼짐, 401, 5xx) 한 줄로 그렇게 말하고, 전부 예전처럼 설명하고, 저장은 건너뛴다.
+- 키 만들기: 설명할 API를 정한 뒤(건너뛸 것과 `only=`를 거친 뒤), 각각을 키 `lang` · `package` · `name`으로 바꾼다. 철자는 `code.api_notes` 시드와 같게: go → 전체 import 경로와 `Func` 또는 `Type.Method` (`net/http` · `Client.Do`, `strings` · `Cut`); php → 확장 이름과 함수 (`standard` · `array_filter`, `pdo` · `PDO::prepare`); postgres → `function`과 함수 이름; mysql → 매뉴얼의 절 제목과 이름 (`Comparison Operators` · `NOT BETWEEN`); 그 밖의 언어 → 소문자 코드(js, ts, rust, swift, java, bash), import나 모듈 이름, 정확한 함수 이름. 아직 시딩 안 된 언어는 그냥 `missing`으로 돌아온다.
+- seen_in 정하기: `seen_in`은 `<레포>@<짧은 sha>`: 레포는 `git rev-parse --show-toplevel`의 마지막 폴더 이름, sha는 `git rev-parse --short HEAD`(PR이면 그 head 커밋). private 컴에서는 `<레포>@YYYY-MM-DD`. 설정 절 참고.
+- 묻기 보내기: 세션 scratchpad에 본문 JSON 파일 하나를 쓴다: `{"seen_in": "…", "keys": [{"lang": "…", "package": "…", "name": "…"}, …]}`. 그리고 보낸다: `curl -sS -X POST <server>/api-notes/lookups -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d @<파일>`. 응답 JSON이 찍힌다.
+- 응답 읽기: 응답은 목록 셋이다. `noted`: 노트가 있고, 이번에 본 것은 블로그가 이미 세었다. 설명하지 말고 한 줄만 찍는다(출력 구조). `indexed`: 목차에는 있고 노트는 아직 없다. `missing`: 행이 아예 없다. `indexed`와 `missing`은 설명하고, 각각 저장한다(저장).
+- 묻기 실패: 묻기 호출 자체가 실패하면(API 꺼짐, 401, 5xx) 한 줄로 그렇게 말하고, 전부 예전처럼 설명하고, 저장은 건너뛴다.
 
 설명할 것
 - 언어 내장(`Array.prototype.flatMap`, `strings.Cut`, `array_column`), 표준 라이브러리, 런타임 API(`process.env`, `AbortController`), 프레임워크 API(`fastify.register`, `useMotionValue`), 서드파티 라이브러리 API, 생성자(`new URLSearchParams()`).
@@ -59,9 +59,9 @@ API 하나마다
 - `Diff`: `파일:줄`과 반 문장. 한 줄, 맨 끝.
 
 저장 (설명한 것을 남긴다)
-- 항목을 다 쓴 뒤, 설명한 API마다 `POST <server>/api-notes`로 저장한다. API 하나에 scratchpad JSON 파일 하나, 보내는 건 묻기와 같은 curl. `lang` · `package` · `name`은 키; `doc_url`은 Docs 링크; `summary`는 Does 줄; `example`은 펜스를 뺀 예제 블록; `gotcha`는 Gotcha 줄, 없으면 뺀다; `major_version`은 제목 줄의 버전(`1.26`, `8.5`), 없으면 뺀다; `first_seen_in`은 `seen_in`과 같은 값.
-- `-w '\n%{http_code}\n'`를 붙여 본문 뒤에 상태 코드가 찍히게 한다. 201은 새 행, 200은 목차 행을 채운 것. 409는 묻기와 지금 사이에 누가 저장한 것이니 괜찮다. 그 밖의 상태는 저장 실패이고, 찍힌 본문이 이유를 말한다.
-- 저장 실패가 설명을 가리면 안 된다: 항목은 화면에 그대로 두고, 마무리 줄에 `save failed: <lang>/<package>/<name> <status>`를 붙이고, 다시 시도하지 않는다.
+- 저장 보내기: 항목을 다 쓴 뒤, 설명한 API마다 `POST <server>/api-notes`로 저장한다. API 하나에 scratchpad JSON 파일 하나, 보내는 건 묻기와 같은 curl. `lang` · `package` · `name`은 키; `doc_url`은 Docs 링크; `summary`는 Does 줄; `example`은 펜스를 뺀 예제 블록; `gotcha`는 Gotcha 줄, 없으면 뺀다; `major_version`은 제목 줄의 버전(`1.26`, `8.5`), 없으면 뺀다; `first_seen_in`은 `seen_in`과 같은 값.
+- 상태 코드 읽기: `-w '\n%{http_code}\n'`를 붙여 본문 뒤에 상태 코드가 찍히게 한다. 201은 새 행, 200은 목차 행을 채운 것. 409는 묻기와 지금 사이에 누가 저장한 것이니 괜찮다. 그 밖의 상태는 저장 실패이고, 찍힌 본문이 이유를 말한다.
+- 저장 실패: 저장 실패가 설명을 가리면 안 된다. 항목은 화면에 그대로 두고, 마무리 줄에 `save failed: <lang>/<package>/<name> <status>`를 붙이고, 다시 시도하지 않는다.
 
 출력 샘플 (ko, 언어마다 항목 하나: php · go · js · bash · postgres. 출력 전체의 모양이 이것이다. 구조를 그대로 따른다)
 
@@ -182,12 +182,12 @@ Saved: 5 (new 2 · filled 3).
 - `private: true`면 출력 첫 줄에 `private machine: notes will carry no paths or identifiers`를 찍어, 가드가 켜져 있다는 게 보이게 한다.
 
 로그인 (GitHub device flow, `gh auth login`과 같은 방식; client_id `Ov23lihsQAi9ZqF6T8au`)
-1. `curl -sS -X POST https://github.com/login/device/code -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au`가 `device_code`, `user_code`, `verification_uri`를 돌려준다.
-2. 선택된 언어로 한 줄을 찍는다: `verification_uri`를 열고 `user_code`를 입력한 뒤 다 되면 알려 달라. 거기서 멈추고 대답을 기다린다. 자동으로 반복해서 묻지 않는다.
-3. 대답이 오면 `curl -sS -X POST https://github.com/login/oauth/access_token -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au -d device_code=<device_code> -d grant_type=urn:ietf:params:oauth:grant-type:device_code > <scratchpad>/gh.json`을 보내고, `jq -r '.error // "ok"' <scratchpad>/gh.json`만 본다. `authorization_pending`이면 2번 줄을 다시 찍고 멈춘다. `expired_token`이면 1번부터 다시 한다.
-4. `jq '{github_token: .access_token}' <scratchpad>/gh.json > <scratchpad>/auth.json`, `rm <scratchpad>/gh.json`, 그다음 `curl -sS -X POST <server>/auth/github -H 'Content-Type: application/json' -d @<scratchpad>/auth.json > <scratchpad>/login.json`과 `rm <scratchpad>/auth.json`. `jq -r '.login // .error' <scratchpad>/login.json`만 본다.
-5. `mkdir -p ~/.config/parapara-code`, `jq '{token: .token, private: false}' <scratchpad>/login.json > ~/.config/parapara-code/config.json`, 그 파일에 `chmod 600`, `rm <scratchpad>/login.json`. `logged in as <login>`을 찍고 입력 절부터 설명을 이어 간다.
-- 어느 단계든 실패하면 한 줄로 그렇게 말하고, 위의 scratchpad 파일을 지우고, 모든 API를 missing처럼 설명하고, 묻기와 저장은 건너뛴다.
+1. 코드 받기: `curl -sS -X POST https://github.com/login/device/code -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au`가 `device_code`, `user_code`, `verification_uri`를 돌려준다.
+2. 사용자에게 안내: 선택된 언어로 한 줄을 찍는다. `verification_uri`를 열고 `user_code`를 입력한 뒤 다 되면 알려 달라. 거기서 멈추고 대답을 기다린다. 자동으로 반복해서 묻지 않는다.
+3. 토큰 받기: 대답이 오면 `curl -sS -X POST https://github.com/login/oauth/access_token -H 'Accept: application/json' -d client_id=Ov23lihsQAi9ZqF6T8au -d device_code=<device_code> -d grant_type=urn:ietf:params:oauth:grant-type:device_code > <scratchpad>/gh.json`을 보내고, `jq -r '.error // "ok"' <scratchpad>/gh.json`만 본다. `authorization_pending`이면 2번 줄을 다시 찍고 멈춘다. `expired_token`이면 1번부터 다시 한다.
+4. 서버에 로그인: `jq '{github_token: .access_token}' <scratchpad>/gh.json > <scratchpad>/auth.json`, `rm <scratchpad>/gh.json`, 그다음 `curl -sS -X POST <server>/auth/github -H 'Content-Type: application/json' -d @<scratchpad>/auth.json > <scratchpad>/login.json`과 `rm <scratchpad>/auth.json`. `jq -r '.login // .error' <scratchpad>/login.json`만 본다.
+5. 설정 파일 쓰기: `mkdir -p ~/.config/parapara-code`, `jq '{token: .token, private: false}' <scratchpad>/login.json > ~/.config/parapara-code/config.json`, 그 파일에 `chmod 600`, `rm <scratchpad>/login.json`. `logged in as <login>`을 찍고 입력 절부터 설명을 이어 간다.
+- 로그인 실패: 어느 단계든 실패하면 한 줄로 그렇게 말하고, 위의 scratchpad 파일을 지우고, 모든 API를 missing처럼 설명하고, 묻기와 저장은 건너뛴다.
 - 토큰: GitHub 토큰도 우리 토큰도 화면에 찍지 않고, 명령이나 Write에 직접 적지 않고, config.json을 Read하지 않는다. 토큰은 셸 안에서 `jq`와 `$(…)`로 파일에서 파일로만 옮긴다.
 
 링크
@@ -195,11 +195,11 @@ Saved: 5 (new 2 · filled 3).
 - API 하나에 링크 하나. 관련 읽을거리로 채우지 않는다.
 
 출력 구조 (문장은 선택된 언어로, 라벨은 영어로, 마크다운 제목 없이)
-1. 한 줄: 어떤 변경을 읽었는지(PR 번호 또는 "working tree"), 설명한 API 수(indexed · missing), noted로 돌아온 수, 뻔해서 건너뛴 수.
-2. API 번호 리스트. 출력 샘플대로 API 하나가 항목 하나. 순서는 언어 내장·표준 라이브러리 → 런타임 → 프레임워크 → 서드파티 라이브러리, 묶음 안에서는 diff에 처음 나오는 줄 순서. 번호는 리스트 전체에서 1, 2, 3…으로 이어진다.
-3. noted API마다 `Noted:` 한 줄, 항목은 없이: `<package>.<name> — <seen_count>번째 (처음 <first_seen_in>) · <summary> → <doc_url>`. 값은 묻기 응답에서.
-4. 건너뛴 뻔한 것들을 나열하는 마지막 한 줄, 그 다음 `Saved: <n> (new <a> · filled <b>)`와 `save failed:` 줄들.
-5. 설명한 API가 다섯 개 이상이면 작은 표: 번호 / API / 패키지 / diff의 위치 / 링크. 읽는 사람이 잊은 하나를 다시 찾을 수 있게 한다.
+1. 첫 줄: 어떤 변경을 읽었는지(PR 번호 또는 "working tree"), 설명한 API 수(indexed · missing), noted로 돌아온 수, 뻔해서 건너뛴 수.
+2. API 목록: API 번호 리스트. 출력 샘플대로 API 하나가 항목 하나. 순서는 언어 내장·표준 라이브러리 → 런타임 → 프레임워크 → 서드파티 라이브러리, 묶음 안에서는 diff에 처음 나오는 줄 순서. 번호는 리스트 전체에서 1, 2, 3…으로 이어진다.
+3. Noted 줄: noted API마다 `Noted:` 한 줄, 항목은 없이: `<package>.<name> — <seen_count>번째 (처음 <first_seen_in>) · <summary> → <doc_url>`. 값은 묻기 응답에서.
+4. 마무리 줄: 건너뛴 뻔한 것들을 나열하고, 그 다음 `Saved: <n> (new <a> · filled <b>)`와 `save failed:` 줄들.
+5. 표: 설명한 API가 다섯 개 이상이면 작은 표. 번호 / API / 패키지 / diff의 위치 / 링크. 읽는 사람이 잊은 하나를 다시 찾을 수 있게 한다.
 
 규칙
 - 변경을 승인하거나 거부하지 않는다. 리뷰 코멘트를 쓰지 않는다.
