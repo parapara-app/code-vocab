@@ -19,8 +19,8 @@ allowed-tools: Bash(curl:*), Bash(jq:*), Read, Write, WebFetch
    - `summary`: 簡単な単語の平易な英語一文、効果を先に
    - `example`: 単独で動く 2〜5 行、リテラル値、値が出る行には行末コメントで結果
    - `gotcha`: 初めて使う人がやるミスを一行、なければ省く
-   - `Signature`、`Params`、`Returns`: 同じページから、見せるだけで保存はしない — ドキュメントが書く呼び出しの形、パラメータ一つにつき一行、何が返るかと端のケースで何が返るか
-   プラグインルートの `entry.tmpl`（このスキルのフォルダから `../../entry.tmpl`、最初の項目の前に一度 Read）を埋めて見せる。diff がないと書けない `Diff` の行だけ省く。`{version}` はドキュメントページに見えるバージョンで、なければ省く。そのあと保存する: `{lang, package, name, doc_url, summary, example, gotcha}` を scratchpad の JSON ファイルに書き、`curl -sS -X POST <server>/api-notes -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d @<file> -w '\n%{http_code}\n'` を送る。`first_seen_in` は省き、遭遇回数が作られないようにする。
+   - `Signature`、`Params`、`Returns`: 同じページから。`Signature` は保存もし、`Params` と `Returns` は見せるだけ — ドキュメントが書く呼び出しの形、パラメータ一つにつき一行、何が返るかと端のケースで何が返るか
+   プラグインルートの `entry.tmpl`（このスキルのフォルダから `../../entry.tmpl`、最初の項目の前に一度 Read）を埋めて見せる。diff がないと書けない `Diff` の行だけ省く。`{version}` はドキュメントページに見えるバージョンで、なければ省く。そのあと保存する: `{lang, package, name, doc_url, summary, example, gotcha, signature}`（`signature` は Signature の行のバッククォートの中、ドキュメントにシグネチャがなければ省く）を scratchpad の JSON ファイルに書き、`curl -sS -X POST <server>/api-notes -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d @<file> -w '\n%{http_code}\n'` を送る。`first_seen_in` は省き、遭遇回数が作られないようにする。
 5. 保存結果を見る: 200 なら目次の行が埋まったということ、409 なら誰かが先に埋めたということ。それ以外は `save failed: <name> <status>`。200 か 409 なら、勉強したものとして残す: `curl -sS -X POST <server>/api-notes/studied -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d '{"lang": "…", "package": "…", "name": "…"}' -o /dev/null -w '%{http_code}\n'`。204 なら完了、それ以外は `studied failed: <name> <status>`。
 6. 進み具合: 最後の行に、触ったパッケージごとに `<package> <summary のある行> / <全行>`。もう一度 GET して数える。
 

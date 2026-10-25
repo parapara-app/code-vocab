@@ -59,7 +59,7 @@ API ごとに
 - `Diff`: `file:line` と半文。一行で、最後に置く。
 
 保存（説明したものを保管する）
-- 保存を送る: 項目を書き終えたら、説明した API をそれぞれ `POST <server>/api-notes` で保存する。API 一つにつき scratchpad の JSON ファイルを一つ、問い合わせと同じ curl で送る。`lang` · `package` · `name` がキー; `doc_url` は Docs のリンク; `summary` は Does の行; `example` はフェンスを除いた例のブロック; `gotcha` は Gotcha の行、なければ省く; `major_version` はタイトル行のバージョン（`1.26`、`8.5`）、なければ省く; `first_seen_in` は `seen_in` と同じ値。
+- 保存を送る: 項目を書き終えたら、説明した API をそれぞれ `POST <server>/api-notes` で保存する。API 一つにつき scratchpad の JSON ファイルを一つ、問い合わせと同じ curl で送る。`lang` · `package` · `name` がキー; `doc_url` は Docs のリンク; `summary` は Does の行; `example` はフェンスを除いた例のブロック; `gotcha` は Gotcha の行、なければ省く; `signature` は Signature の行のバッククォートの中、ドキュメントにシグネチャがなければ省く; `major_version` はタイトル行のバージョン（`1.26`、`8.5`）、なければ省く; `first_seen_in` は `seen_in` と同じ値。
 - ステータスを読む: `-w '\n%{http_code}\n'` を付けて、ボディの後にステータスコードが出るようにする。201 は新しい行、200 は目次の行が埋まったということ。409 は問い合わせから今までの間に誰かが保存したということで、問題ない。それ以外のステータスは保存の失敗で、表示されるボディに理由が出る。
 - 保存の失敗: 保存の失敗で説明を隠さない。 項目は画面に残し、最後の行に `save failed: <lang>/<package>/<name> <status>` を足し、再試行はしない。
 

@@ -59,7 +59,7 @@ The reader runs this BEFORE opening the diff, so the entry has to make the funct
 - `Diff`: `file:line` and a half-sentence. One line, last.
 
 SAVE (store what you explained)
-- Send the save: after the entries are written, save each explained API with `POST <server>/api-notes`: one scratchpad JSON file per API, sent with the same curl as LOOKUP. `lang` · `package` · `name` the key; `doc_url` the Docs link; `summary` the Does line; `example` the example block without the fence; `gotcha` the Gotcha line, or left out; `major_version` the version from the title line (`1.26`, `8.5`), or left out; `first_seen_in` the same value as `seen_in`.
+- Send the save: after the entries are written, save each explained API with `POST <server>/api-notes`: one scratchpad JSON file per API, sent with the same curl as LOOKUP. `lang` · `package` · `name` the key; `doc_url` the Docs link; `summary` the Does line; `example` the example block without the fence; `gotcha` the Gotcha line, or left out; `signature` the Signature line without its backticks, or left out when the docs give none; `major_version` the version from the title line (`1.26`, `8.5`), or left out; `first_seen_in` the same value as `seen_in`.
 - Read the status: add `-w '\n%{http_code}\n'` so the status prints after the body. 201 is a new row, 200 is an index row filled in. 409 means someone saved it between LOOKUP and now; that is fine. Any other status is a failed save, and the printed body says why.
 - Save failure: a failed save never hides the explanation. keep the entry on screen, add `save failed: <lang>/<package>/<name> <status>` to the closing lines, and do not retry.
 

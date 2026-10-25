@@ -59,7 +59,7 @@ API 하나마다
 - `Diff`: `파일:줄`과 반 문장. 한 줄, 맨 끝.
 
 저장 (설명한 것을 남긴다)
-- 저장 보내기: 항목을 다 쓴 뒤, 설명한 API마다 `POST <server>/api-notes`로 저장한다. API 하나에 scratchpad JSON 파일 하나, 보내는 건 묻기와 같은 curl. `lang` · `package` · `name`은 키; `doc_url`은 Docs 링크; `summary`는 Does 줄; `example`은 펜스를 뺀 예제 블록; `gotcha`는 Gotcha 줄, 없으면 뺀다; `major_version`은 제목 줄의 버전(`1.26`, `8.5`), 없으면 뺀다; `first_seen_in`은 `seen_in`과 같은 값.
+- 저장 보내기: 항목을 다 쓴 뒤, 설명한 API마다 `POST <server>/api-notes`로 저장한다. API 하나에 scratchpad JSON 파일 하나, 보내는 건 묻기와 같은 curl. `lang` · `package` · `name`은 키; `doc_url`은 Docs 링크; `summary`는 Does 줄; `example`은 펜스를 뺀 예제 블록; `gotcha`는 Gotcha 줄, 없으면 뺀다; `signature`는 Signature 줄의 백틱 안, 문서에 시그니처가 없으면 뺀다; `major_version`은 제목 줄의 버전(`1.26`, `8.5`), 없으면 뺀다; `first_seen_in`은 `seen_in`과 같은 값.
 - 상태 코드 읽기: `-w '\n%{http_code}\n'`를 붙여 본문 뒤에 상태 코드가 찍히게 한다. 201은 새 행, 200은 목차 행을 채운 것. 409는 묻기와 지금 사이에 누가 저장한 것이니 괜찮다. 그 밖의 상태는 저장 실패이고, 찍힌 본문이 이유를 말한다.
 - 저장 실패: 저장 실패가 설명을 가리면 안 된다. 항목은 화면에 그대로 두고, 마무리 줄에 `save failed: <lang>/<package>/<name> <status>`를 붙이고, 다시 시도하지 않는다.
 

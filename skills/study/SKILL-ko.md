@@ -19,8 +19,8 @@ allowed-tools: Bash(curl:*), Bash(jq:*), Read, Write, WebFetch
    - `summary`: 쉬운 단어로 쓴 평이한 영어 한 문장, 효과를 먼저
    - `example`: 혼자 돌아가는 2–5줄, 리터럴 값, 값이 나오는 줄마다 끝에 주석으로 결과
    - `gotcha`: 처음 쓰는 사람이 하는 실수 한 줄, 없으면 뺀다
-   - `Signature`, `Params`, `Returns`: 같은 페이지에서, 보여 주기만 하고 저장하지 않는다 — 문서가 적는 호출 형태, 인자마다 한 줄, 뭘 돌려주고 가장자리에서 뭘 돌려주는지
-   플러그인 루트의 `entry.tmpl`(이 스킬 폴더 기준 `../../entry.tmpl`, 첫 항목 전에 한 번 Read)을 채워서 보여 준다. diff가 있어야 쓸 수 있는 `Diff` 줄만 뺀다. `{version}`은 문서 페이지에 보이는 버전이고, 없으면 뺀다. 그 뒤 저장한다: `{lang, package, name, doc_url, summary, example, gotcha}`를 scratchpad JSON 파일에 쓰고 `curl -sS -X POST <server>/api-notes -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d @<파일> -w '\n%{http_code}\n'`를 보낸다. `first_seen_in`은 빼서 본 횟수가 생기지 않게 한다.
+   - `Signature`, `Params`, `Returns`: 같은 페이지에서. `Signature`는 저장도 하고, `Params`·`Returns`는 보여 주기만 한다 — 문서가 적는 호출 형태, 인자마다 한 줄, 뭘 돌려주고 가장자리에서 뭘 돌려주는지
+   플러그인 루트의 `entry.tmpl`(이 스킬 폴더 기준 `../../entry.tmpl`, 첫 항목 전에 한 번 Read)을 채워서 보여 준다. diff가 있어야 쓸 수 있는 `Diff` 줄만 뺀다. `{version}`은 문서 페이지에 보이는 버전이고, 없으면 뺀다. 그 뒤 저장한다: `{lang, package, name, doc_url, summary, example, gotcha, signature}`(`signature`는 Signature 줄의 백틱 안, 문서에 시그니처가 없으면 뺀다)를 scratchpad JSON 파일에 쓰고 `curl -sS -X POST <server>/api-notes -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d @<파일> -w '\n%{http_code}\n'`를 보낸다. `first_seen_in`은 빼서 본 횟수가 생기지 않게 한다.
 5. 저장 결과 보기: 200이면 목차 행을 채운 것, 409면 누가 먼저 채운 것이다. 그 밖은 `save failed: <name> <status>`. 200이나 409면 공부한 것으로 남긴다: `curl -sS -X POST <server>/api-notes/studied -H "Authorization: Bearer $(jq -r .token ~/.config/parapara-code/config.json)" -H 'Content-Type: application/json' -d '{"lang": "…", "package": "…", "name": "…"}' -o /dev/null -w '%{http_code}\n'`. 204면 끝, 그 밖은 `studied failed: <name> <status>`.
 6. 진행률: 마지막 줄에 손댄 패키지마다 `<package> <summary 있는 행> / <전체 행>`. GET을 한 번 더 해서 센다.
 
