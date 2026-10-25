@@ -1,0 +1,18 @@
+The shape of one entry, for every vocab skill. Fill the {slots} and keep everything else as it is: the three-space indent under the number, the fence at column 0, and the blank line before and after the fence. A slot named like an api_notes column (summary, example, gotcha, doc_url) holds that column's value, so the note saved and the note shown are the same text.
+
+Signature, Params, Returns and Diff appear only in /vocab:review; the other skills leave those lines out. Gotcha is left out when there is nothing worth saying. Labels never change; {group} and the sentences in Params, Returns and Diff follow the output language, while {summary}, {example} and {gotcha} are plain English in every language because they are the saved note.
+
+{n}. {api} — {group} {package}, {version}
+   - Signature: `{signature}`
+   - Params:
+     1. `{param}`: {what it is, and its default or common value}
+   - Returns: {returns}
+   - Does: {summary}
+
+```{lang}
+{example}
+```
+
+   - Docs: {doc_url}
+   - Gotcha: {gotcha}
+   - Diff: {file}:{line}, {half sentence}
